@@ -25,7 +25,7 @@ Random.seed!(1234)
 x1s = rand(M) * 4.5; x2s = rand(M) * 4.5
 xt1s = Array([[x1s[i] + 0.5; x2s[i] + 0.5] for i = 1:M])
 x1s = rand(M) * 4.5; x2s = rand(M) * 4.5
-append!(xt1s, Array([[x1s[i] - 5; x2s[i] + 5] for i = 1:M]))
+append!(xt1s, Array([[x1s[i] - 5; x2s[i] - 5] for i = 1:M]))
 
 x1s = rand(M) * 4.5; x2s = rand(M) * 4.5
 xt0s = Array([[x1s[i] + 0.5; x2s[i] - 5] for i = 1:M])
@@ -132,3 +132,24 @@ primarily in determining how good a classifier our model is.
 
 # Extract all weight and bias parameters.
 theta = MCMCChains.group(ch, :nn_params).value
+
+
+"""
+We can use a MAP estimation to classify our population by using the set of
+weights that provided the highest log posterior.
+"""
+
+# Plot the data we have.
+plot_data()
+
+# Find the index that provided the highest log posterior in the chain.
+_, i = findmax(ch[:lp])
+
+# Extract the max row value from i
+i = i.I[1]
+
+# Plot th eposterior distribution with a contour plot.
+x_range = collect(range(-6, stop=6, length=25))
+y_range = collect(range(-6, stop=6, length=25))
+Z = [nn_forward([x,y], theta[i,:])[1] for x=x_range, y=y_range]
+contour!(x_range, y_range, Z)
