@@ -148,8 +148,31 @@ _, i = findmax(ch[:lp])
 # Extract the max row value from i
 i = i.I[1]
 
-# Plot th eposterior distribution with a contour plot.
+# Plot the posterior distribution with a contour plot.
 x_range = collect(range(-6, stop=6, length=25))
 y_range = collect(range(-6, stop=6, length=25))
 Z = [nn_forward([x,y], theta[i,:])[1] for x=x_range, y=y_range]
+contour!(x_range, y_range, Z)
+
+"""
+Now we can visualize our predictions.
+The `nn_predict` function takes the average predicted value from a network 
+parametrized by weights drawn from the MCMC chain.
+"""
+function nn_predict(x, theta, num)
+    mean(
+        [nn_forward(x, theta[i,:])[1] for i in 1:10:num]
+    )
+end
+
+"""
+Next, we use the `nn_predict` function to predict the value at a sample of
+points where the x and y coordinates range between -6 and 6.
+"""
+plot_data()
+
+n_end = 1500
+x_range = collect(range(-6, stop=6, length=25))
+y_range = collect(range(-6, stop=6, length=25))
+Z = [nn_predict([x,y], theta, n_end)[1] for x=x_range, y=y_range]
 contour!(x_range, y_range, Z)
