@@ -48,6 +48,8 @@ sig = sqrt(1.0 / alpha)
     for i = 1:M
         nn_params[i] ~ Normal(0, sig)
     end
+
+    β ~ Gamma(9.0, 0.5)
     
     # Calculate predictions for the inputs given the weights
     # and biases in theta.
@@ -83,4 +85,4 @@ StatsPlots.plot(ch)
 # multiple weights.
 function nn_predict(x, theta, num)
     mean([nn_forward(x, theta[i,:])[1] for i in 1:10:num])
-end;
+end
