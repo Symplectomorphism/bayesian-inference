@@ -76,7 +76,7 @@ randomized = VectorOfArray([(zeros(2) + 0.01 * randn(2)) for i in 1:length(t)])
 data = convert(Array,randomized)
 # data = zeros(2, 10)
 
-priors = [truncated(Normal(0.1,0.1),0,3),truncated(Normal(0.0,0.1),0,2)]
+priors = [truncated(Normal(0.0,0.1),0,3),truncated(Normal(0.0,0.1),0,2)]
 
 bayesian_result = turing_inference(prob2,Tsit5(),t,data,priors)
 
