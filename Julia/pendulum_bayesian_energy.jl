@@ -61,6 +61,7 @@ using Plots, StatsPlots
 f2 = @ode_def begin
     dx = y
     dy = sin(x) - a*y*( 1/2*y^2 + (-1+cos(x)) )
+    dz = -a*y^2*z^2
 end a
 
 
@@ -79,21 +80,21 @@ sol = solve(prob,Tsit5())
 plot(sol,vars=(1,2))
 
 
-p = [2.0, 1.0]
-u0 = [π+1*π/180,0.0]
+p = [0.0]
+u0 = [π+10*π/180, 0.0, 1/2*0.0^2 + (1+cos( π+10*π/180 ))]
 tspan = (0.0,10.0)
 prob2 = ODEProblem(f2,u0,tspan,p)
 
-sol = solve(prob2,Tsit5())
+sol = solve(prob2,Tsit5(),save_idxs=[3])
 # σ = 0.01  
 t = collect(range(1,stop=tspan[2],length=100))
 # randomized = VectorOfArray([(sol(t[i]) + 0.01 * randn(2)) for i in 1:length(t)])
-randomized = VectorOfArray([(zeros(2) + 0.01 * randn(2)) for i in 1:length(t)])
+randomized = VectorOfArray([(zeros(3) + 0.01 * randn(3)) for i in 1:length(t)])
 data = convert(Array,randomized)
 # data = zeros(2, 10)
 
 # priors = [truncated(Normal(0.0,0.1),0,3),truncated(Normal(0.0,0.1),0,2)]
-priors = [Normal(0.0, 1.0), Normal(0.0, 1.0)]
+priors = [Normal(0.0, 1.0)]
 
 bayesian_result = turing_inference(prob2,Tsit5(),t,data,priors)
 
