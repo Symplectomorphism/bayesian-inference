@@ -95,7 +95,7 @@ data = convert(Array,randomized)
 
 # priors = [truncated(Normal(0.0,0.1),0,3),truncated(Normal(0.0,0.1),0,2)]
 # priors = [Normal(-10.0, 100.0)]
-priors = [truncated(Normal(-10.0,5.0),0,5)]
+priors = [truncated(Normal(-10.0,5.0),-10,5)]
 
 bayesian_result = turing_inference(prob2,Tsit5(),t,data,priors)
 
