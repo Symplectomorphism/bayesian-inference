@@ -80,7 +80,7 @@ sol = solve(prob,Tsit5())
 plot(sol,vars=(1,2))
 
 
-p = [0.0]
+p = [-10.0]
 u0 = [π+10*π/180, 0.0, 1/2*0.0^2 + (1+cos( π+10*π/180 ))]
 tspan = (0.0,10.0)
 prob2 = ODEProblem(f2,u0,tspan,p)
@@ -94,7 +94,8 @@ data = convert(Array,randomized)
 # data = zeros(2, 10)
 
 # priors = [truncated(Normal(0.0,0.1),0,3),truncated(Normal(0.0,0.1),0,2)]
-priors = [Normal(0.0, 1.0)]
+# priors = [Normal(-10.0, 100.0)]
+priors = [truncated(Normal(-10.0,5.0),0,5)]
 
 bayesian_result = turing_inference(prob2,Tsit5(),t,data,priors)
 
