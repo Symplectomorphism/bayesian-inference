@@ -60,9 +60,11 @@ using Plots, StatsPlots
 
 f2 = @ode_def begin
     dx = y
-    dy = sin(x) - a*y*( 1/2*y^2 + (-1+cos(x)) )
-    dz = -a*y^2*z^2
-end a
+    dy = sin(x) + 
+            abs(z) * (-a*y*( 1/2*y^2 + (-1+cos(x)) )) + 
+            4*(0.25-abs(z))*(-b*sin(x) - c*y)
+    dz = -a*y^2*z
+end a b c
 
 
 function energy_pendulum(du, u, p, t)
@@ -70,24 +72,28 @@ function energy_pendulum(du, u, p, t)
     Href = 2.0
     H̃ = H - Href
     du[1] = u[2]
-    du[2] = sin(u[1]) - 10.0*u[2]*H̃
+    du[2] = sin(u[1]) + 
+                abs(u[3]) * (-p[1]*u[2]*H̃) + 
+                4*(0.25 - abs(u[3])) * (-p[2]*sin(u[1]) - p[3]*u[2])
+    du[3] = -p[1]*u[2]^2*u[3]
 end
 
-u0 = [π+10*π/180,0.0]
-tspan = (0.0, 10.0)
-prob = ODEProblem(energy_pendulum, u0, tspan)
+u0 = [π+10*π/180, 0.0, 1/2*0.0^2 + (-1+cos( π+10*π/180 ))]
+tspan = (0.0, 50.0)
+prob = ODEProblem(energy_pendulum, u0, tspan, [2.49906, 0.24376, 0.539426])
 sol = solve(prob,Tsit5())
 plot(sol,vars=(1,2))
+plot(sol,vars=(3))
 
 
-p = [-10.0]
-u0 = [π+10*π/180, 0.0, 1/2*0.0^2 + (1+cos( π+10*π/180 ))]
-tspan = (0.0,10.0)
+p = [0.0, 0.0, 0.0]
+u0 = [π+10*π/180, 0.0, 1/2*0.0^2 + (-1+cos( π+10*π/180 ))]
+tspan = (0.0,50.0)
 prob2 = ODEProblem(f2,u0,tspan,p)
 
-sol = solve(prob2,Tsit5(),save_idxs=[3])
+sol = solve(prob2,Tsit5(),save_idxs=[1,2,3])
 # σ = 0.01  
-t = collect(range(1,stop=tspan[2],length=100))
+t = collect(range(40,stop=tspan[2],length=10))
 # randomized = VectorOfArray([(sol(t[i]) + 0.01 * randn(2)) for i in 1:length(t)])
 randomized = VectorOfArray([(zeros(3) + 0.01 * randn(3)) for i in 1:length(t)])
 data = convert(Array,randomized)
@@ -95,8 +101,13 @@ data = convert(Array,randomized)
 
 # priors = [truncated(Normal(0.0,0.1),0,3),truncated(Normal(0.0,0.1),0,2)]
 # priors = [Normal(-10.0, 100.0)]
-priors = [truncated(Normal(-10.0,5.0),-10,5)]
+# priors = [truncated(Normal(-10.0,5.0),-10,5)]
+priors = [truncated(Normal(0.0,5.0),-10,5), 
+          truncated(Normal(1.0,1.0),-2,0.5),
+          truncated(Normal(1.0,1.0),-2,1)]
 
-bayesian_result = turing_inference(prob2,Tsit5(),t,data,priors)
+bayesian_result = turing_inference(prob2,Tsit5(),t,data,priors,save_idxs=[1,2,3])
 
 plot(bayesian_result)
+
+display( mean(bayesian_result.value.data, dims=1) )
