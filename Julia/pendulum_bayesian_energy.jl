@@ -1,6 +1,8 @@
 using ParameterizedFunctions, OrdinaryDiffEq, RecursiveArrayTools, Distributions
-using DiffEqBayes
+using DiffEqBayes, Turing
 using Plots, StatsPlots
+
+Turing.setprogress!(true)
 
 # # using CmdStan #required for using the Stan backend
 # using DynamicHMC #required for DynamicHMC backend
@@ -67,24 +69,6 @@ f2 = @ode_def begin
 end a b c
 
 
-function energy_pendulum(du, u, p, t)
-    H = 1/2*u[2]^2 + (1+cos(u[1]))
-    Href = 2.0
-    H̃ = H - Href
-    du[1] = u[2]
-    du[2] = sin(u[1]) + 
-                abs(u[3]) * (-p[1]*u[2]*H̃) + 
-                4*(0.25 - abs(u[3])) * (-p[2]*sin(u[1]) - p[3]*u[2])
-    du[3] = -p[1]*u[2]^2*u[3]
-end
-
-u0 = [π+10*π/180, 0.0, 1/2*0.0^2 + (-1+cos( π+10*π/180 ))]
-tspan = (0.0, 50.0)
-prob = ODEProblem(energy_pendulum, u0, tspan, [2.49906, 0.24376, 0.539426])
-sol = solve(prob,Tsit5())
-plot(sol,vars=(1,2))
-plot(sol,vars=(3))
-
 
 p = [0.0, 0.0, 0.0]
 u0 = [π+10*π/180, 0.0, 1/2*0.0^2 + (-1+cos( π+10*π/180 ))]
@@ -106,8 +90,30 @@ priors = [truncated(Normal(0.0,5.0),-10,5),
           truncated(Normal(1.0,1.0),-2,0.5),
           truncated(Normal(1.0,1.0),-2,1)]
 
-bayesian_result = turing_inference(prob2,Tsit5(),t,data,priors,save_idxs=[1,2,3])
+bayesian_result = turing_inference(prob2,Tsit5(),t,data,priors;
+                    save_idxs=[1,2,3],
+                    sampler = Turing.NUTS(10_000, 0.65))
 
 plot(bayesian_result)
 
-display( mean(bayesian_result.value.data, dims=1) )
+display( findmax(bayesian_result.value.data, dims=1)[1][1:3] )
+
+
+function energy_pendulum(du, u, p, t)
+    H = 1/2*u[2]^2 + (1+cos(u[1]))
+    Href = 2.0
+    H̃ = H - Href
+    du[1] = u[2]
+    du[2] = sin(u[1]) + 
+                abs(u[3]) * (-p[1]*u[2]*H̃) + 
+                4*(0.25 - abs(u[3])) * (-p[2]*sin(u[1]) - p[3]*u[2])
+    du[3] = -p[1]*u[2]^2*u[3]
+end
+
+u0 = [π+10*π/180, 0.0, 1/2*0.0^2 + (-1+cos( π+10*π/180 ))]
+tspan = (0.0, 50.0)
+prob = ODEProblem(energy_pendulum, u0, tspan, 
+    findmax(bayesian_result.value.data, dims=1)[1][1:3])
+sol = solve(prob,Tsit5())
+plot(sol,vars=(1,2))
+plot(sol,vars=(3))
